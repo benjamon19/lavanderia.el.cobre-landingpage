@@ -1,168 +1,233 @@
 // src/pages/tracking/components/TrackingTimeline.tsx
-import { 
-  FaClipboardCheck, 
-  FaTshirt, 
-  FaWind, 
-  FaCheckCircle,
-  FaClock,
-  FaCheck,
-  FaInfoCircle
+import {
+    FaClipboardCheck,
+    FaWind,
+    FaCheckCircle,
+    FaCheck,
+    FaTruck,
+    FaBox
 } from 'react-icons/fa'
 import { GiIronCross } from 'react-icons/gi'
+import { FaDroplet } from 'react-icons/fa6'
+
+interface HistoryEvent {
+    estado: string
+    fechaCambio: any
+}
 
 interface Stage {
-  id: number
-  name: string
-  description: string
-  icon: React.ReactNode
-  timestamp: string
-  status: 'completed' | 'in-progress' | 'pending'
+    id: number
+    estado: string
+    name: string
+    description: string
+    icon: React.ReactNode
+    timestamp: string
+    status: 'completed' | 'in-progress' | 'pending'
 }
 
 interface TrackingTimelineProps {
-  currentStage: number
+    currentEstado?: string
+    history?: HistoryEvent[]
 }
 
-export default function TrackingTimeline({ currentStage }: TrackingTimelineProps) {
-  const stages: Stage[] = [
-    {
-      id: 1,
-      name: 'Recepcionado',
-      description: 'Tu pedido ha sido recibido y registrado',
-      icon: <FaClipboardCheck className="text-base sm:text-xl md:text-2xl" />,
-      timestamp: '20 Oct 2025, 14:30',
-      status: currentStage >= 1 ? 'completed' : 'pending'
-    },
-    {
-      id: 2,
-      name: 'Lavado',
-      description: 'Tu ropa está siendo lavada con cuidado',
-      icon: <FaTshirt className="text-base sm:text-xl md:text-2xl" />,
-      timestamp: currentStage >= 2 ? '20 Oct 2025, 15:45' : 'Pendiente',
-      status: currentStage > 2 ? 'completed' : currentStage === 2 ? 'in-progress' : 'pending'
-    },
-    {
-      id: 3,
-      name: 'Secado',
-      description: 'Proceso de secado en marcha',
-      icon: <FaWind className="text-base sm:text-xl md:text-2xl" />,
-      timestamp: currentStage >= 3 ? '20 Oct 2025, 17:15' : 'Pendiente',
-      status: currentStage > 3 ? 'completed' : currentStage === 3 ? 'in-progress' : 'pending'
-    },
-    {
-      id: 4,
-      name: 'Planchado',
-      description: 'Tu ropa está siendo planchada',
-      icon: <GiIronCross className="text-base sm:text-xl md:text-2xl" />,
-      timestamp: currentStage >= 4 ? '20 Oct 2025, 18:30' : 'Pendiente',
-      status: currentStage > 4 ? 'completed' : currentStage === 4 ? 'in-progress' : 'pending'
-    },
-    {
-      id: 5,
-      name: 'Listo',
-      description: 'Tu pedido está listo para retirar',
-      icon: <FaCheckCircle className="text-base sm:text-xl md:text-2xl" />,
-      timestamp: currentStage >= 5 ? '20 Oct 2025, 19:00' : 'Pendiente',
-      status: currentStage >= 5 ? 'completed' : 'pending'
+export default function TrackingTimeline({ currentEstado, history = [] }: TrackingTimelineProps) {
+    // Mapeo de estados a IDs de etapa
+    const estadoToStageId: Record<string, number> = {
+        'pendiente': 1,
+        'lavado': 2,
+        'secado': 3,
+        'planchado': 4,
+        'empaquetado': 5,
+        'preparando_despacho': 6,
+        'en_despacho': 7,
+        'entregado': 8
     }
-  ]
 
-  const getStatusStyles = (status: Stage['status']) => {
-    switch (status) {
-      case 'completed':
-        return {
-          container: 'bg-green-50 border-green-200',
-          icon: 'bg-green-500 text-white',
-          text: 'text-green-700',
-          line: 'bg-green-500'
-        }
-      case 'in-progress':
-        return {
-          container: 'bg-orange-50 border-[#ff6b35]',
-          icon: 'bg-gradient-to-br from-[#ff6b35] to-[#e85d2e] text-white',
-          text: 'text-[#ff6b35]',
-          line: 'bg-[#cfcfd8]'
-        }
-      case 'pending':
-        return {
-          container: 'bg-gray-50 border-gray-200',
-          icon: 'bg-gray-300 text-gray-500',
-          text: 'text-gray-500',
-          line: 'bg-[#cfcfd8]'
+    const currentStageId = currentEstado ? (estadoToStageId[currentEstado] || 1) : 1
+
+    const formatDate = (timestamp: any): string => {
+        if (!timestamp) return 'Pendiente'
+
+        try {
+            if (timestamp.toDate) {
+                const date = timestamp.toDate()
+                const day = date.getDate().toString().padStart(2, '0')
+                const month = (date.getMonth() + 1).toString().padStart(2, '0')
+                const year = date.getFullYear()
+                const hours = date.getHours()
+                const minutes = date.getMinutes().toString().padStart(2, '0')
+                const ampm = hours >= 12 ? 'p. m.' : 'a. m.'
+                const displayHours = hours % 12 || 12
+                return `${day}-${month}-${year}, ${displayHours}:${minutes} ${ampm}`
+            }
+            if (typeof timestamp === 'string') {
+                const date = new Date(timestamp)
+                const day = date.getDate().toString().padStart(2, '0')
+                const month = (date.getMonth() + 1).toString().padStart(2, '0')
+                const year = date.getFullYear()
+                const hours = date.getHours()
+                const minutes = date.getMinutes().toString().padStart(2, '0')
+                const ampm = hours >= 12 ? 'p. m.' : 'a. m.'
+                const displayHours = hours % 12 || 12
+                return `${day}-${month}-${year}, ${displayHours}:${minutes} ${ampm}`
+            }
+            return 'Pendiente'
+        } catch (error) {
+            return 'Pendiente'
         }
     }
-  }
 
-  return (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-6 md:p-8 border-2 border-[#f0f0f5]">
-      <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#1a1a2e] mb-6 sm:mb-8">
-        Línea de Tiempo del Proceso
-      </h2>
-      
-      <div className="relative">
-        {stages.map((stage, index) => {
-          const styles = getStatusStyles(stage.status)
-          const isLast = index === stages.length - 1
-          
-          return (
-            <div key={stage.id} className="relative pb-8 sm:pb-10 md:pb-12 last:pb-0">
-              {/* Línea conectora - Visible en TODOS los tamaños */}
-              {!isLast && (
-                <div 
-                  className={`absolute left-6 sm:left-6 md:left-8 top-12 sm:top-14 md:top-16 w-0.5 sm:w-1 h-full ${styles.line}`}
-                  style={{ height: 'calc(100% - 0rem)' }}
-                />
-              )}
-              
-              {/* Card de etapa */}
-              <div className={`relative flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 border-2 ${styles.container} rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6`}>
-                {/* Icono */}
-                <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full ${styles.icon} flex items-center justify-center shadow-lg`}>
-                  {stage.icon}
+    const getTimestampForEstado = (estado: string): string => {
+        const event = history.find(e => e.estado === estado)
+        return event ? formatDate(event.fechaCambio) : 'Pendiente'
+    }
+
+    const stages: Stage[] = [
+        {
+            id: 1,
+            estado: 'pendiente',
+            name: 'Procesos Pendientes',
+            description: 'Tu pedido ha sido recibido y registrado',
+            icon: <FaClipboardCheck className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('pendiente'),
+            status: currentStageId >= 1 ? (currentStageId > 1 ? 'completed' : 'in-progress') : 'pending'
+        },
+        {
+            id: 2,
+            estado: 'lavado',
+            name: 'Lavado',
+            description: 'Tu ropa está siendo lavada con cuidado',
+            icon: <FaDroplet className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('lavado'),
+            status: currentStageId > 2 ? 'completed' : currentStageId === 2 ? 'in-progress' : 'pending'
+        },
+        {
+            id: 3,
+            estado: 'secado',
+            name: 'Secado',
+            description: 'Proceso de secado en marcha',
+            icon: <FaWind className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('secado'),
+            status: currentStageId > 3 ? 'completed' : currentStageId === 3 ? 'in-progress' : 'pending'
+        },
+        {
+            id: 4,
+            estado: 'planchado',
+            name: 'Planchado',
+            description: 'Tu ropa está siendo planchada',
+            icon: <GiIronCross className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('planchado'),
+            status: currentStageId > 4 ? 'completed' : currentStageId === 4 ? 'in-progress' : 'pending'
+        },
+        {
+            id: 5,
+            estado: 'empaquetado',
+            name: 'Empaquetado',
+            description: 'Tu pedido está siendo empaquetado',
+            icon: <FaBox className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('empaquetado'),
+            status: currentStageId > 5 ? 'completed' : currentStageId === 5 ? 'in-progress' : 'pending'
+        },
+        {
+            id: 6,
+            estado: 'preparando_despacho',
+            name: 'Preparando Despacho',
+            description: 'Tu pedido está siendo preparado para el despacho',
+            icon: <FaBox className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('preparando_despacho'),
+            status: currentStageId > 6 ? 'completed' : currentStageId === 6 ? 'in-progress' : 'pending'
+        },
+        {
+            id: 7,
+            estado: 'en_despacho',
+            name: 'En Despacho',
+            description: 'Tu pedido está en camino',
+            icon: <FaTruck className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('en_despacho'),
+            status: currentStageId > 7 ? 'completed' : currentStageId === 7 ? 'in-progress' : 'pending'
+        },
+        {
+            id: 8,
+            estado: 'entregado',
+            name: 'Entregado',
+            description: 'Tu pedido ha sido entregado',
+            icon: <FaCheckCircle className="text-base sm:text-xl md:text-2xl" />,
+            timestamp: getTimestampForEstado('entregado'),
+            status: currentStageId >= 8 ? 'completed' : 'pending'
+        }
+    ]
+
+    const getStatusStyles = (status: Stage['status']) => {
+        switch (status) {
+            case 'completed':
+                return {
+                    container: 'bg-green-50 border-green-200',
+                    icon: 'bg-green-500 text-white',
+                    text: 'text-green-700',
+                    line: 'bg-green-500'
+                }
+            case 'in-progress':
+                return {
+                    container: 'bg-orange-50 border-[#ff6b35]',
+                    icon: 'bg-gradient-to-br from-[#ff6b35] to-[#e85d2e] text-white',
+                    text: 'text-[#ff6b35]',
+                    line: 'bg-[#cfcfd8]'
+                }
+            case 'pending':
+                return {
+                    container: 'bg-gray-50 border-gray-200',
+                    icon: 'bg-gray-300 text-gray-500',
+                    text: 'text-gray-500',
+                    line: 'bg-[#cfcfd8]'
+                }
+        }
+    }
+
+    return (
+        <div className="w-full py-4 sm:py-8 overflow-x-auto">
+            <div className="min-w-[320px] px-2">
+                <div className="flex justify-between items-start relative">
+                    {stages.map((stage, index) => {
+                        const isLast = index === stages.length - 1
+                        const styles = getStatusStyles(stage.status)
+
+                        return (
+                            <div key={stage.id} className="relative flex flex-col items-center flex-1">
+                                {/* Línea conectora horizontal */}
+                                {!isLast && (
+                                    <div
+                                        className={`absolute top-6 sm:top-7 left-1/2 w-full h-0.5 sm:h-1 ${styles.line} -z-0`}
+                                    />
+                                )}
+
+                                {/* Icono */}
+                                <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 ${styles.container} ${styles.icon} flex items-center justify-center shadow-md z-10`}>
+                                    {stage.icon}
+                                </div>
+
+                                {/* Nombre de la etapa */}
+                                <div className="mt-2 sm:mt-3 text-center w-full px-1">
+                                    <h3 className={`text-[10px] sm:text-xs font-bold ${styles.text} leading-tight mb-1`}>
+                                        {stage.name}
+                                    </h3>
+                                    {stage.status === 'in-progress' && (
+                                        <div className="inline-flex items-center gap-1 bg-white px-2 py-1 rounded border border-[#ff6b35] text-[#ff6b35] font-semibold text-[9px] sm:text-xs">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#ff6b35] animate-pulse"></div>
+                                            Actual
+                                        </div>
+                                    )}
+                                    {stage.status === 'completed' && (
+                                        <div className="flex items-center justify-center text-green-600 text-[9px] sm:text-xs">
+                                            <FaCheck className="text-[8px] sm:text-[10px]" />
+                                        </div>
+                                    )}
+                                    <p className="text-[9px] text-gray-400 mt-1 hidden sm:block">{stage.timestamp}</p>
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
-                
-                {/* Contenido */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-0 mb-2">
-                    <h3 className={`text-base sm:text-lg md:text-xl font-bold ${styles.text}`}>
-                      {stage.name}
-                    </h3>
-                    <span className={`text-xs sm:text-sm font-medium ${styles.text} flex items-center gap-1.5 whitespace-nowrap`}>
-                      {stage.status === 'in-progress' && <FaClock className="text-xs sm:text-sm" />}
-                      {stage.status === 'completed' && <FaCheck className="text-xs sm:text-sm" />}
-                      <span className="hidden sm:inline">{stage.timestamp}</span>
-                      <span className="sm:hidden">{stage.timestamp.split(',')[0]}</span>
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm md:text-base text-[#6b6b7e] leading-relaxed">
-                    {stage.description}
-                  </p>
-                  
-                  {stage.status === 'in-progress' && (
-                    <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 bg-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border-2 border-[#ff6b35] text-[#ff6b35] font-semibold text-xs sm:text-sm">
-                      <div className="w-2 h-2 rounded-full bg-[#ff6b35] animate-pulse"></div>
-                      En proceso ahora
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
-          )
-        })}
-      </div>
-      
-      <div className="mt-6 sm:mt-8 p-4 sm:p-5 md:p-6 bg-[#fff4f0] rounded-lg sm:rounded-xl border-2 border-[#ffded0]">
-        <div className="flex items-center gap-2 mb-2 sm:mb-3">
-          <FaInfoCircle className="text-[#ff6b35] text-sm sm:text-base flex-shrink-0" />
-          <h3 className="font-semibold text-sm sm:text-base text-[#1a1a2e]">
-            Información Importante
-          </h3>
         </div>
-        <p className="text-xs sm:text-sm text-[#2c2c3e]">
-          El tiempo estimado de cada etapa puede variar según la carga de trabajo. 
-          Te notificaremos cuando tu pedido esté listo para retirar.
-        </p>
-      </div>
-    </div>
-  )
+    )
 }

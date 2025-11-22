@@ -1,16 +1,16 @@
 // src/pages/intranet/components/Sidebar.tsx
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { 
-  FaClipboardList, 
-  FaFileInvoice, 
-  FaBox, 
-  FaShoppingBag, 
-  FaTimes, 
-  FaUsers, 
-  FaChevronDown, 
+import {
+  FaClipboardList,
+  FaFileInvoice,
+  FaBox,
+  FaShoppingBag,
+  FaTimes,
+  FaUsers,
+  FaChevronDown,
   FaChevronRight,
-  FaExternalLinkAlt 
+  FaExternalLinkAlt
 } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
@@ -40,9 +40,9 @@ export default function Sidebar({ activeModule, isOpen, onClose }: SidebarProps)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
 
   const toggleMenu = (menuId: string) => {
-    setExpandedMenus(prev => 
-      prev.includes(menuId) 
-        ? prev.filter(id => id !== menuId) 
+    setExpandedMenus(prev =>
+      prev.includes(menuId)
+        ? prev.filter(id => id !== menuId)
         : [...prev, menuId]
     )
   }
@@ -68,7 +68,7 @@ export default function Sidebar({ activeModule, isOpen, onClose }: SidebarProps)
       roles: ['Administrador', 'Trabajador', 'Recepcionista'],
       subItems: [
         { label: 'Equipo 1', url: 'https://deploy-equipo-1.vercel.app' },
-        { label: 'Equipo 3', url: 'https://deploy-equipo-3.vercel.app' }
+        { label: 'Equipo 3', url: 'https://lavanderia-el-cobre-spa.vercel.app/' }
       ]
     },
     {
@@ -77,8 +77,7 @@ export default function Sidebar({ activeModule, isOpen, onClose }: SidebarProps)
       icon: <FaFileInvoice />,
       roles: ['Administrador', 'Trabajador', 'Recepcionista'],
       subItems: [
-        // ALERTA: Asegúrate de que esta URL sea donde desplegaste el código que arreglamos
-        { label: 'Equipo 2', url: 'https://lavanderia-el-cobre-sigma.vercel.app' }, 
+        { label: 'Equipo 2', url: 'https://lavanderia-el-cobre-sigma.vercel.app' },
         { label: 'Equipo 5', url: 'https://deploy-equipo-5.vercel.app' }
       ]
     },
@@ -86,10 +85,10 @@ export default function Sidebar({ activeModule, isOpen, onClose }: SidebarProps)
       id: 'management',
       label: 'Gestión Interna',
       icon: <FaBox />,
-      roles: ['Administrador', 'Trabajador'], 
+      roles: ['Administrador', 'Trabajador'],
       subItems: [
         { label: 'Equipo 4', url: 'https://lavanderia-cobre-spa.vercel.app' }, 
-        { label: 'Equipo 7', url: 'https://deploy-equipo-7.vercel.app' }
+        { label: 'Equipo 7', url: 'https://lavanderia-el-cobre-iota.vercel.app/' }
       ]
     },
     {
@@ -113,7 +112,7 @@ export default function Sidebar({ activeModule, isOpen, onClose }: SidebarProps)
   return (
     <>
       {/* Overlay para móvil */}
-      <div 
+      <div
         className={`
           fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden
           transition-opacity duration-300
@@ -129,18 +128,18 @@ export default function Sidebar({ activeModule, isOpen, onClose }: SidebarProps)
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:z-30 lg:shadow-none
       `}>
-        
+
         {/* Header del sidebar (Solo móvil) */}
         <div className="h-16 bg-white border-b-2 border-[#f0f0f5] flex items-center justify-between px-4 lg:hidden">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain sm:hidden"/>
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain sm:hidden" />
             <p className="text-xs text-[#6b6b7e]">Sistema Intranet</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-[#fff4f0] text-[#6b6b7e]">
             <FaTimes className="text-xl" />
           </button>
         </div>
-        
+
         {/* Navegación */}
         <nav className="p-4">
           <p className="text-xs font-semibold text-[#6b6b7e] uppercase mb-4 px-4 tracking-wide">Menú Principal</p>
@@ -171,7 +170,7 @@ export default function Sidebar({ activeModule, isOpen, onClose }: SidebarProps)
                     <ul className="mt-1 ml-4 space-y-1 border-l-2 border-[#f0f0f5] pl-2 animate-fadeIn">
                       {item.subItems.map((sub, idx) => (
                         <li key={idx}>
-                          <a 
+                          <a
                             // GRACIAS A ESTA LÍNEA, EL EQUIPO 2 RECIBIRÁ EL TOKEN AUTOMÁTICAMENTE
                             href={getSecureUrl(sub.url)}
                             target="_blank"
