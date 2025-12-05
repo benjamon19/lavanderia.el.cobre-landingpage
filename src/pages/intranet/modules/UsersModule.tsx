@@ -1,10 +1,9 @@
 // src/pages/intranet/modules/UsersModule.tsx
 import { useState, useEffect } from 'react'
-// Importamos utilidades para manejar apps secundarias
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 import { doc, setDoc, serverTimestamp, collection, getDocs, query, orderBy, updateDoc } from 'firebase/firestore'
-// Importamos la db normal y la configuración para crear la app temporal
 import { db, firebaseConfig } from '../../../config/firebase'
 import { FaUser, FaEnvelope, FaLock, FaUserTag, FaPhone, FaIdCard, FaEdit, FaTrash, FaEye, FaSearch, FaUserPlus, FaUsersCog, FaTimes, FaBan, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { validateAndFormatRUT, formatChileanPhone, formatRut } from '../../../utils/chileanValidators'
@@ -17,7 +16,6 @@ interface UserFormData {
   nombre: string
   rut: string
   telefono: string
-  // CAMBIO: Añadido 'repartidor' a los roles permitidos
   rol: 'administrador' | 'cliente' | 'operario' | 'recepcionista' | 'repartidor'
   activo: boolean
 }
@@ -407,6 +405,16 @@ export default function UsersModule() {
         phoneToSave = phoneValidation.formatted
       }
 
+      // Update Email if changed (using Cloud Function)
+      if (editFormData.correo && editFormData.correo !== selectedUser.correo) {
+        const functions = getFunctions()
+        const updateUserEmail = httpsCallable(functions, 'updateUserEmail')
+        await updateUserEmail({
+          uid: selectedUser.uid,
+          newEmail: editFormData.correo
+        })
+      }
+
       await updateDoc(doc(db, 'usuarios', selectedUser.uid), {
         ...editFormData,
         rut: rutToSave,
@@ -678,7 +686,7 @@ export default function UsersModule() {
           </div>
 
           {/* CAMBIO: Tabla Responsive */}
-          
+
           {/* Vista Desktop (Tabla Tradicional) - Oculta en pantallas pequeñas */}
           <div className="hidden md:block overflow-x-auto mb-4">
             <table className="w-full">
@@ -768,7 +776,7 @@ export default function UsersModule() {
                       {user.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
-                  
+
                   <div className="mb-4">
                     <span className="inline-block px-3 py-1 bg-orange-100 text-[#ff6b35] rounded-full text-xs font-medium capitalize">
                       {user.rol}
@@ -822,22 +830,22 @@ export default function UsersModule() {
 
                 {/* En mobile mostramos menos números de página para no romper el layout */}
                 <div className="hidden sm:flex gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`w-8 h-8 rounded-lg font-medium transition-colors ${currentPage === page
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-8 h-8 rounded-lg font-medium transition-colors ${currentPage === page
                         ? 'bg-[#ff6b35] text-white'
                         : 'text-gray-600 hover:bg-gray-50 border border-gray-200'
                         }`}
                     >
-                        {page}
+                      {page}
                     </button>
-                    ))}
+                  ))}
                 </div>
                 {/* Indicador de página simple para mobile */}
                 <div className="sm:hidden flex items-center px-2 text-sm font-medium text-gray-600">
-                   Pág {currentPage} de {totalPages}
+                  Pág {currentPage} de {totalPages}
                 </div>
 
                 <button
