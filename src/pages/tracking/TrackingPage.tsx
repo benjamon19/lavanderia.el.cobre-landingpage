@@ -1,7 +1,7 @@
 // src/pages/tracking/TrackingPage.tsx
 import { useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../../config/firebase'
 import TrackingHeader from './components/TrackingHeader'
 import TrackingTimeline from './components/TrackingTimeline'
@@ -35,6 +35,8 @@ export default function TrackingPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined
+
     const fetchOrder = async () => {
       if (!code) {
         setLoading(false)
@@ -45,63 +47,34 @@ export default function TrackingPage() {
         setLoading(true)
         setError(null)
 
-        // Buscar en la colección seguimiento_3 por numeroOrden en incidencias
+        // Primero buscar el documento por numeroOrden
         const seguimientoRef = collection(db, 'seguimiento_3')
+        const allDocs = await getDocs(seguimientoRef)
+        const matchingDoc = allDocs.docs.find(doc => {
+          const data = doc.data()
+          return data.numeroOrden === code.toUpperCase()
+        })
 
-        // Intentar buscar por incidencias.numeroOrden (si incidencias es un objeto)
-        let q = query(seguimientoRef, where('incidencias.numeroOrden', '==', code.toUpperCase()))
-        let querySnapshot = await getDocs(q)
+        if (!matchingDoc) {
+          setError('No se encontró ningún pedido con ese número de orden.')
+          setOrderData(null)
+          setLoading(false)
+          return
+        }
 
-        // Si no se encuentra, intentar buscar en todos los documentos (fallback)
-        if (querySnapshot.empty) {
-          const allDocs = await getDocs(seguimientoRef)
-          const matchingDoc = allDocs.docs.find(doc => {
-            const data = doc.data()
-            // Verificar si numeroOrden está en incidencias (objeto o array)
-            if (data.incidencias?.numeroOrden === code.toUpperCase()) {
-              return true
-            }
-            // También verificar si hay un campo numeroOrden directo
-            if (data.numeroOrden === code.toUpperCase()) {
-              return true
-            }
-            return false
-          })
-
-          if (matchingDoc) {
-            const seguimientoData = matchingDoc.data() as OrderData
-
-            // Buscar información adicional en comandas_2 usando comanda_id
-            if (seguimientoData.comanda_id) {
-              try {
-                const comandaDocRef = doc(db, 'comandas_2', seguimientoData.comanda_id)
-                const comandaDoc = await getDoc(comandaDocRef)
-
-                if (comandaDoc.exists()) {
-                  const comandaData = comandaDoc.data()
-                  // Combinar datos de seguimiento con datos de comanda
-                  seguimientoData.clienteNombre = comandaData.nombreCliente
-                  seguimientoData.fechaIngreso = comandaData.fechaIngreso
-                  seguimientoData.horaIngreso = comandaData.horaIngreso
-                  seguimientoData.servicioExpress = comandaData.servicioExpress
-                  seguimientoData.tipoEntrega = comandaData.tipoEntrega
-                }
-              } catch (err) {
-                console.error('Error al obtener datos de comanda:', err)
-              }
-            }
-
-            setOrderData(seguimientoData)
-          } else {
-            setError('No se encontró ningún pedido con ese número de orden.')
+        // Ahora crear listener en tiempo real para este documento específico
+        const docRef = doc(db, 'seguimiento_3', matchingDoc.id)
+        
+        const unsubscribe = onSnapshot(docRef, async (seguimientoDocSnap) => {
+          if (!seguimientoDocSnap.exists()) {
+            setError('Pedido no encontrado')
             setOrderData(null)
+            return
           }
-        } else {
-          // Tomar el primer documento encontrado
-          const seguimientoDoc = querySnapshot.docs[0]
-          const seguimientoData = seguimientoDoc.data() as OrderData
 
-          // Buscar información adicional en comandas_2 usando comanda_id
+          const seguimientoData = seguimientoDocSnap.data() as OrderData
+
+          // Obtener datos de comanda
           if (seguimientoData.comanda_id) {
             try {
               const comandaDocRef = doc(db, 'comandas_2', seguimientoData.comanda_id)
@@ -109,7 +82,6 @@ export default function TrackingPage() {
 
               if (comandaDoc.exists()) {
                 const comandaData = comandaDoc.data()
-                // Combinar datos de seguimiento con datos de comanda
                 seguimientoData.clienteNombre = comandaData.nombreCliente
                 seguimientoData.fechaIngreso = comandaData.fechaIngreso
                 seguimientoData.horaIngreso = comandaData.horaIngreso
@@ -122,17 +94,31 @@ export default function TrackingPage() {
           }
 
           setOrderData(seguimientoData)
-        }
+          setLoading(false)
+        })
+
+        // Retornar función de limpieza
+        return unsubscribe
+
       } catch (err) {
         console.error('Error al buscar el pedido:', err)
         setError('Error al buscar el pedido. Por favor, intenta nuevamente.')
         setOrderData(null)
-      } finally {
         setLoading(false)
       }
     }
 
-    fetchOrder()
+    const init = async () => {
+      unsubscribe = await fetchOrder()
+    }
+
+    init()
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
+    }
   }, [code])
 
   const formatDate = (timestamp: any): string => {
